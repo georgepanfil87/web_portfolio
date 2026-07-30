@@ -2,10 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>WebPortfolio</title>
+  <title>George Panfil — Full-Stack Developer</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+    content="George Panfil — Full-Stack Developer working with Angular, .NET Core and Python/FastAPI, with recent work on local-first LLM and RAG systems.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#08090c">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="George Panfil — Full-Stack Developer">
+  <meta property="og:description"
+    content="Angular, .NET Core and Python/FastAPI. Recent work on local-first LLM and RAG systems.">
+  <meta name="twitter:card" content="summary">
+
+  <script>
+   
+    (function () {
+      try {
+        var stored = localStorage.getItem('gp-theme');
+        var theme = stored === 'light' || stored === 'dark'
+          ? stored
+          : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

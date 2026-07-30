@@ -10,14 +10,21 @@ describe('App', () => {
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('renders the owner name as the hero heading', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, web_portfolio');
+    const heading = (fixture.nativeElement as HTMLElement).querySelector('#hero-heading');
+    expect(heading?.textContent?.trim()).toBe('George Panfil');
+  });
+
+  it('seeds the terminal so the panel is never blank', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('#terminal-input')).toBeTruthy();
+    expect(host.textContent).toContain('Dynamic developer with 2 years');
   });
 });

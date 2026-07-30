@@ -1,0 +1,108 @@
+@import 'tailwindcss';
+
+
+@import '@fontsource-variable/space-grotesk/index.css';
+@import '@fontsource-variable/manrope/index.css';
+@import '@fontsource-variable/jetbrains-mono/index.css';
+
+@import './tokens.css';
+@import './utilities.css';
+
+/* Dark palette — the base theme. Light overrides these in tokens.css. */
+@theme {
+  --color-bg: #08090c;
+  --color-panel: #0d0f14;
+  --color-panel2: #14171f;
+  --color-line: rgba(236, 231, 222, 0.1);
+  --color-ink: #ece7de;
+  --color-muted: #948f85;
+
+  --color-accent: #2fe6d6;
+  --color-accent-soft: rgba(47, 230, 214, 0.16);
+  --color-accent-ink: #7ff5ea;
+  --color-accent-text: #2fe6d6;
+  --color-ring: rgba(47, 230, 214, 0.55);
+  /* Ink used on top of an accent fill. */
+  --color-on-accent: #04120f;
+
+  --font-display: 'Space Grotesk Variable', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 18px;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: var(--leading-normal);
+    color: var(--color-ink);
+    background-color: var(--color-bg);
+
+    transition:
+      background-color var(--duration-normal) var(--ease-in-out),
+      color var(--duration-normal) var(--ease-in-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body {
+      transition: none;
+    }
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  a {
+    color: var(--color-accent-ink);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-accent);
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+}
