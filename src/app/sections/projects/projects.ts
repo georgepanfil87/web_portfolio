@@ -110,9 +110,11 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
               </a>
             </h3>
 
-            <p class="mb-5 max-w-[60ch] text-base leading-relaxed text-muted">
-              {{ project.description }}
-            </p>
+            @if (project.description) {
+              <p class="mb-5 max-w-[60ch] text-base leading-relaxed text-muted">
+                {{ project.description }}
+              </p>
+            }
 
             @if (project.details.length) {
               <ul class="mb-5 flex flex-wrap gap-1.75">
@@ -133,14 +135,27 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
                   <li class="text-xs text-accent-ink">#{{ tag }}</li>
                 }
               </ul>
-              <a
-                [href]="project.repoUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="focus-ring ml-auto rounded text-sm font-semibold"
-              >
-                View repo ↗
-              </a>
+              <span class="ml-auto flex items-center gap-4">
+                <!-- Comes from the repo's Website field on GitHub. -->
+                @if (project.liveUrl) {
+                  <a
+                    [href]="project.liveUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="focus-ring rounded text-sm font-semibold"
+                  >
+                    Live demo ↗
+                  </a>
+                }
+                <a
+                  [href]="project.repoUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="focus-ring rounded text-sm font-semibold"
+                >
+                  View repo ↗
+                </a>
+              </span>
             </div>
           </article>
         }
@@ -167,7 +182,9 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
               </a>
             </h3>
 
-            <p class="mb-5 text-[15px] leading-relaxed text-muted">{{ project.description }}</p>
+            @if (project.description) {
+              <p class="mb-5 text-[15px] leading-relaxed text-muted">{{ project.description }}</p>
+            }
 
             <div class="mt-auto flex flex-wrap items-center gap-3">
               <ul class="flex flex-wrap gap-1.5">
@@ -175,14 +192,26 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
                   <li class="text-xs text-accent-ink">#{{ tag }}</li>
                 }
               </ul>
-              <a
-                [href]="project.repoUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="focus-ring ml-auto rounded text-sm font-semibold"
-              >
-                Repo ↗
-              </a>
+              <span class="ml-auto flex items-center gap-3">
+                @if (project.liveUrl) {
+                  <a
+                    [href]="project.liveUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="focus-ring rounded text-sm font-semibold"
+                  >
+                    Live ↗
+                  </a>
+                }
+                <a
+                  [href]="project.repoUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="focus-ring rounded text-sm font-semibold"
+                >
+                  Repo ↗
+                </a>
+              </span>
             </div>
           </article>
         }

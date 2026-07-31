@@ -15,15 +15,17 @@ export interface RepoFetchResult {
 
 const { username, apiBase, cacheKey, cacheTtlHours } = SITE_CONFIG.github;
 const TTL_MS = cacheTtlHours * 60 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 10_000;
 
 @Injectable({ providedIn: 'root' })
 export class GithubService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private inFlight: Promise<RepoFetchResult | null> | null = null;
 
+ 
   async getRepos(force = false): Promise<RepoFetchResult | null> {
     if (!this.isBrowser) {
-      return null;
+      return this.fetchFresh(null);
     }
 
     const cached = this.readCache();
@@ -41,9 +43,13 @@ export class GithubService {
 
   private async fetchFresh(cached: CacheEnvelope | null): Promise<RepoFetchResult | null> {
     const url = `${apiBase}/users/${username}/repos?per_page=100&sort=pushed`;
+    // A hung request must not hang a production build.
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), FETCH_TIMEOUT_MS);
     try {
       const response = await fetch(url, {
         headers: { Accept: 'application/vnd.github+json' },
+        signal: abort.signal,
       });
       if (!response.ok) {
         throw new Error(`GitHub responded ${response.status}`);
@@ -56,6 +62,8 @@ export class GithubService {
       return { repos, stale: false };
     } catch {
       return cached ? { repos: cached.repos, stale: true } : null;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
@@ -73,6 +81,9 @@ export class GithubService {
   }
 
   private writeCache(repos: GithubRepo[]): void {
+    if (!this.isBrowser) {
+      return;
+    }
     try {
       const trimmed: GithubRepo[] = repos.map((repo) => ({
         name: repo.name,

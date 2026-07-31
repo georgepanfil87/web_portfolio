@@ -77,10 +77,8 @@ function toProject(repo: GithubRepo): Project | null {
   return {
     id: repo.name,
     title: override?.title ?? repo.name,
-    description:
-      override?.description ??
-      repo.description ??
-      'No description on GitHub yet — add one in projects-overrides.json.',
+
+    description: override?.description ?? repo.description ?? '',
     tags: deriveTags(repo, override),
     details: override?.details ?? [],
     language: repo.language,
