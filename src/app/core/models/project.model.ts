@@ -38,8 +38,11 @@ export interface Project {
   forks: number;
   repoUrl: string;
   liveUrl: string | null;
-  /** GitHub's social preview card, or a custom one uploaded in repo settings. */
-  imageUrl: string | null;
+  /**
+   * Card images to try in order: the repo's own committed preview first,
+   * GitHub's generated social card as the fallback.
+   */
+  imageCandidates: string[];
   lastPush: string | null;
   featured: boolean;
   source: ProjectSource;

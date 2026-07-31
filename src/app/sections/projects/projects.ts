@@ -102,13 +102,13 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
             @if (imageFor(project); as image) {
               <img
                 [src]="image"
-                alt=""
+                [alt]="project.title + ' — project preview'"
                 width="1200"
                 height="600"
                 loading="lazy"
                 decoding="async"
                 class="mb-5 aspect-[2/1] w-full rounded-xl border border-line object-cover"
-                (error)="onImageError(project.id)"
+                (error)="onImageError(project)"
               />
             }
 
@@ -192,13 +192,13 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
             @if (imageFor(project); as image) {
               <img
                 [src]="image"
-                alt=""
+                [alt]="project.title + ' — project preview'"
                 width="1200"
                 height="600"
                 loading="lazy"
                 decoding="async"
                 class="mb-5 aspect-[2/1] w-full rounded-xl border border-line object-cover"
-                (error)="onImageError(project.id)"
+                (error)="onImageError(project)"
               />
             }
 
@@ -260,14 +260,24 @@ export class Projects {
   protected readonly projects = inject(ProjectsService);
   protected readonly techFocus = inject(TechFocusService);
 
-  /** GitHub's image host rate-limits, so a card must survive a failed load. */
-  private readonly brokenImages = signal<ReadonlySet<string>>(new Set());
+  /**
+   * How far down each project's candidate list we have fallen back. A repo
+   * without its own committed preview 404s on the first candidate and lands on
+   * GitHub's generated card; only when every candidate fails does the image go
+   * away entirely.
+   */
+  private readonly imageStep = signal<ReadonlyMap<string, number>>(new Map());
 
   protected imageFor(project: Project): string | null {
-    return project.imageUrl && !this.brokenImages().has(project.id) ? project.imageUrl : null;
+    const step = this.imageStep().get(project.id) ?? 0;
+    return project.imageCandidates[step] ?? null;
   }
 
-  protected onImageError(id: string): void {
-    this.brokenImages.update((current) => new Set(current).add(id));
+  protected onImageError(project: Project): void {
+    this.imageStep.update((current) => {
+      const next = new Map(current);
+      next.set(project.id, (next.get(project.id) ?? 0) + 1);
+      return next;
+    });
   }
 }

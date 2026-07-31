@@ -55,10 +55,24 @@ function prettifyTag(topic: string): string {
 
 const CONTROL_TOPICS = new Set<string>(Object.values(SITE_CONFIG.github.controlTopics));
 
-function socialImageUrl(repo: GithubRepo): string {
+/**
+ * Card images, most-preferred first.
+ *
+ * 1. An image committed in the repo — yours, versioned, and served from a CDN
+ *    that does not rate-limit the way the card renderer does.
+ * 2. GitHub's generated social preview.
+ *
+ * The generated card uses a fixed `/1/` segment on purpose. Deriving it from
+ * `pushed_at` changed the URL on every push, forcing GitHub to re-render the
+ * card each time and making 429s likely — which is what made images vanish.
+ */
+function imageCandidates(repo: GithubRepo): string[] {
   const owner = SITE_CONFIG.github.username;
-  const version = (repo.pushed_at ?? '').replace(/\D/g, '') || '1';
-  return `https://opengraph.githubassets.com/${version}/${owner}/${repo.name}`;
+  const { previewImagePath } = SITE_CONFIG.github;
+  return [
+    `https://raw.githubusercontent.com/${owner}/${repo.name}/HEAD/${previewImagePath}`,
+    `https://opengraph.githubassets.com/1/${owner}/${repo.name}`,
+  ];
 }
 
 function deriveTags(repo: GithubRepo, override?: ProjectOverride): string[] {
@@ -104,7 +118,7 @@ function toProject(repo: GithubRepo): Project | null {
     forks: repo.forks_count ?? repo.forks ?? 0,
     repoUrl: repo.html_url,
     liveUrl: override?.liveUrl ?? (repo.homepage?.trim() ? repo.homepage : null),
-    imageUrl: socialImageUrl(repo),
+    imageCandidates: imageCandidates(repo),
     lastPush: repo.pushed_at ?? null,
     featured: override?.featured ?? topics.includes(featuredTopic),
     source: 'github',

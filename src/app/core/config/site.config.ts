@@ -10,6 +10,14 @@ export const SITE_CONFIG = {
       featured: 'featured',
       hidden: 'portfolio-hide',
     },
+
+    /*
+     * Commit an image at this path inside any repo and the card uses it. It is
+     * read from the default branch, so it is versioned with the project and
+     * fully under your control. Repos without one fall back to GitHub's
+     * generated social preview card.
+     */
+    previewImagePath: '.github/preview.png',
   },
 
   theme: {
