@@ -53,11 +53,22 @@ function prettifyTag(topic: string): string {
   return TAG_LABELS[topic] ?? topic.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+const CONTROL_TOPICS = new Set<string>(Object.values(SITE_CONFIG.github.controlTopics));
+
+function socialImageUrl(repo: GithubRepo): string {
+  const owner = SITE_CONFIG.github.username;
+  const version = (repo.pushed_at ?? '').replace(/\D/g, '') || '1';
+  return `https://opengraph.githubassets.com/${version}/${owner}/${repo.name}`;
+}
+
 function deriveTags(repo: GithubRepo, override?: ProjectOverride): string[] {
   if (override?.tags?.length) {
     return override.tags;
   }
-  const fromTopics = (repo.topics ?? []).map(prettifyTag);
+  // Control topics steer the layout; they are not technologies.
+  const fromTopics = (repo.topics ?? [])
+    .filter((topic) => !CONTROL_TOPICS.has(topic))
+    .map(prettifyTag);
   const fromLanguage = repo.language
     ? [repo.language, ...(LANGUAGE_EXTRA_TAGS[repo.language] ?? [])]
     : [];
@@ -67,7 +78,14 @@ function deriveTags(repo: GithubRepo, override?: ProjectOverride): string[] {
 
 function toProject(repo: GithubRepo): Project | null {
   const override = OVERRIDES[repo.name];
-  if (override?.hidden || SITE_CONFIG.github.exclude.includes(repo.name)) {
+  const topics = repo.topics ?? [];
+  const { featured: featuredTopic, hidden: hiddenTopic } = SITE_CONFIG.github.controlTopics;
+
+  if (
+    override?.hidden ||
+    topics.includes(hiddenTopic) ||
+    SITE_CONFIG.github.exclude.includes(repo.name)
+  ) {
     return null;
   }
   if (repo.fork) {
@@ -86,8 +104,9 @@ function toProject(repo: GithubRepo): Project | null {
     forks: repo.forks_count ?? repo.forks ?? 0,
     repoUrl: repo.html_url,
     liveUrl: override?.liveUrl ?? (repo.homepage?.trim() ? repo.homepage : null),
+    imageUrl: socialImageUrl(repo),
     lastPush: repo.pushed_at ?? null,
-    featured: override?.featured ?? false,
+    featured: override?.featured ?? topics.includes(featuredTopic),
     source: 'github',
   };
 }

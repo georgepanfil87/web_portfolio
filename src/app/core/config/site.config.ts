@@ -5,6 +5,11 @@ export const SITE_CONFIG = {
     cacheTtlHours: 6,
     cacheKey: 'gp-github-repos-v1',
     exclude: [] as string[],
+
+    controlTopics: {
+      featured: 'featured',
+      hidden: 'portfolio-hide',
+    },
   },
 
   theme: {

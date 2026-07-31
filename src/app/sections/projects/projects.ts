@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RevealOnScrollDirective } from '../../core/directives/reveal-on-scroll.directive';
 import { SpotlightDirective } from '../../core/directives/spotlight.directive';
+import { Project } from '../../core/models/project.model';
 import { ProjectsService } from '../../core/services/projects.service';
 import { TechFocusService } from '../../core/services/tech-focus.service';
 
@@ -92,11 +93,30 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
           >
             <div class="lit-ring" [attr.data-lit]="techFocus.isLit(project.id)"></div>
 
+            <!--
+              alt is empty on purpose: by default this is GitHub's generated
+              card, which just restates the title and description sitting right
+              below it. Give it real alt text if you upload a screenshot as the
+              repo's social preview.
+            -->
+            @if (imageFor(project); as image) {
+              <img
+                [src]="image"
+                alt=""
+                width="1200"
+                height="600"
+                loading="lazy"
+                decoding="async"
+                class="mb-5 aspect-[2/1] w-full rounded-xl border border-line object-cover"
+                (error)="onImageError(project.id)"
+              />
+            }
+
             <p
               class="mb-4 w-fit rounded-full bg-accent px-2.5 py-1 font-mono text-[11.5px]
                      font-semibold tracking-[.1em] text-on-accent uppercase"
             >
-              Dissertation · flagship
+              Featured
             </p>
 
             <h3 class="mb-3 text-[34px] leading-tight">
@@ -169,6 +189,19 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
           >
             <div class="lit-ring" [attr.data-lit]="techFocus.isLit(project.id)"></div>
 
+            @if (imageFor(project); as image) {
+              <img
+                [src]="image"
+                alt=""
+                width="1200"
+                height="600"
+                loading="lazy"
+                decoding="async"
+                class="mb-5 aspect-[2/1] w-full rounded-xl border border-line object-cover"
+                (error)="onImageError(project.id)"
+              />
+            }
+
             <p class="mb-3.5 font-mono text-[12.5px] text-muted">~/ repos</p>
 
             <h3 class="mb-3 text-2xl tracking-[-.01em]">
@@ -226,4 +259,15 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
 export class Projects {
   protected readonly projects = inject(ProjectsService);
   protected readonly techFocus = inject(TechFocusService);
+
+  /** GitHub's image host rate-limits, so a card must survive a failed load. */
+  private readonly brokenImages = signal<ReadonlySet<string>>(new Set());
+
+  protected imageFor(project: Project): string | null {
+    return project.imageUrl && !this.brokenImages().has(project.id) ? project.imageUrl : null;
+  }
+
+  protected onImageError(id: string): void {
+    this.brokenImages.update((current) => new Set(current).add(id));
+  }
 }
