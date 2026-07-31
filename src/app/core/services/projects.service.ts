@@ -3,7 +3,7 @@ import { SITE_CONFIG } from '../config/site.config';
 import { GithubRepo, Project, ProjectOverride, ProjectsStatus } from '../models/project.model';
 import { PROJECTS_FALLBACK } from '../../data/projects-fallback';
 import overridesJson from '../../data/projects-overrides.json';
-import { GithubService } from './github.service';
+import { GithubService, RepoFetchResult } from './github.service';
 
 const TAG_LABELS: Record<string, string> = {
   angular: 'Angular',
@@ -168,19 +168,39 @@ export class ProjectsService {
     this.activeTag.set(this.activeTag() === tag ? null : tag);
   }
 
-  async load(force = false): Promise<void> {
-    if (this.status() === 'loading') {
-      return;
-    }
-    this.status.set('loading');
+  /** Guards against re-rendering the grid when revalidation changes nothing. */
+  private lastSignature = '';
 
-    const result = await this.github.getRepos(force);
-    if (!result) {
+  /**
+   * Stale-while-revalidate.
+   *
+   * Cached repos paint immediately, then GitHub is consulted on every load and
+   * the grid updates if anything actually changed — so editing a topic or a
+   * description shows up on the next page load instead of whenever a TTL lapses.
+   *
+   * During prerendering there is no cache, so this simply awaits the fetch,
+   * which is what the server-side app initializer needs.
+   */
+  async load(): Promise<void> {
+    const { immediate, revalidated } = this.github.getRepos();
+
+    if (immediate) {
+      this.apply(immediate);
+    } else {
+      this.status.set('loading');
+    }
+
+    const fresh = await revalidated;
+
+    if (fresh) {
+      this.apply(fresh);
+    } else if (!immediate) {
       this.status.set('fallback');
       this.usingStaleCache.set(false);
-      return;
     }
+  }
 
+  private apply(result: RepoFetchResult): void {
     const mapped = result.repos
       .map(toProject)
       .filter((project): project is Project => project !== null);
@@ -190,7 +210,16 @@ export class ProjectsService {
       return;
     }
 
-    this.all.set(sortProjects(mapped));
+    const sorted = sortProjects(mapped);
+    const signature = sorted
+      .map((p) => [p.id, p.featured, p.description, p.tags.join(','), p.liveUrl, p.lastPush].join('|'))
+      .join('||');
+
+    if (signature !== this.lastSignature) {
+      this.lastSignature = signature;
+      this.all.set(sorted);
+    }
+
     this.usingStaleCache.set(result.stale);
     this.status.set('ready');
 

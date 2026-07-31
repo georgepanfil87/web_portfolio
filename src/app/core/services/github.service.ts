@@ -10,7 +10,15 @@ interface CacheEnvelope {
 
 export interface RepoFetchResult {
   repos: GithubRepo[];
+  /** True when the network failed and cached data was used instead. */
   stale: boolean;
+}
+
+export interface RepoSnapshot {
+  /** Renderable right now, straight from cache. Null on a first visit. */
+  immediate: RepoFetchResult | null;
+  /** Resolves once the network has been consulted. */
+  revalidated: Promise<RepoFetchResult | null>;
 }
 
 const { username, apiBase, cacheKey, cacheTtlHours } = SITE_CONFIG.github;
@@ -23,22 +31,34 @@ export class GithubService {
   private inFlight: Promise<RepoFetchResult | null> | null = null;
 
  
-  async getRepos(force = false): Promise<RepoFetchResult | null> {
+  getRepos(): RepoSnapshot {
     if (!this.isBrowser) {
-      return this.fetchFresh(null);
+      // Prerendering: nothing cached, and the caller awaits this.
+      return { immediate: null, revalidated: this.fetchFresh(null) };
     }
 
     const cached = this.readCache();
-    if (!force && cached && Date.now() - cached.fetchedAt < TTL_MS) {
-      return { repos: cached.repos, stale: false };
-    }
 
-    this.inFlight ??= this.fetchFresh(cached);
-    try {
-      return await this.inFlight;
-    } finally {
+    /*
+     * Stale-while-revalidate: paint from cache immediately, then always ask
+     * GitHub anyway. A repo edited on GitHub shows up on the next page load
+     * rather than whenever the TTL happens to lapse.
+     *
+     * The TTL is no longer a gate on fetching — it only decides whether cached
+     * data still counts as trustworthy if the network call fails.
+     */
+    const immediate = cached ? { repos: cached.repos, stale: false } : null;
+
+    this.inFlight ??= this.fetchFresh(cached).finally(() => {
       this.inFlight = null;
-    }
+    });
+
+    return { immediate, revalidated: this.inFlight };
+  }
+
+  /** Cached data older than the TTL is only worth showing if the network fails. */
+  private isExpired(cached: CacheEnvelope): boolean {
+    return Date.now() - cached.fetchedAt >= TTL_MS;
   }
 
   private async fetchFresh(cached: CacheEnvelope | null): Promise<RepoFetchResult | null> {
@@ -61,7 +81,12 @@ export class GithubService {
       this.writeCache(repos);
       return { repos, stale: false };
     } catch {
-      return cached ? { repos: cached.repos, stale: true } : null;
+      // Network failed. Recent cache stands in silently; anything older than the
+      // TTL is still shown, but flagged so the UI can say so.
+      if (!cached) {
+        return null;
+      }
+      return { repos: cached.repos, stale: this.isExpired(cached) };
     } finally {
       clearTimeout(timeout);
     }

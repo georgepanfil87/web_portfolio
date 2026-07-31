@@ -69,7 +69,7 @@ import { TechFocusService } from '../../core/services/tech-focus.service';
       } @else {
         <p class="mb-5 flex items-center gap-2 font-mono text-[12.5px] text-muted">
           <span class="pulse-dot size-1.75 rounded-full bg-accent" aria-hidden="true"></span>
-          live from the GitHub API · cached 6h
+          live from the GitHub API · refreshed on every visit
         </p>
       }
 
